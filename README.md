@@ -15,6 +15,7 @@ A from-scratch simulation of an AI training chip built in Python.
 - Achieved 12,746x speedup over CPU at 64×64 matrix size
 - Demonstrated 41.9% loss reduction over 50 training steps
 - Observed real AI phenomena including dead neurons from ReLU
+- Solved XOR with 100% improvement and 0.0001 final loss
 
 ## What I learned
 - How systolic arrays compute matrix multiplication in parallel
@@ -33,3 +34,4 @@ Python · NumPy · Google Colab
 
 ## Age
 Built at age 12.
+
