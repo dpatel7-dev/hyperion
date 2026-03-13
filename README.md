@@ -1,71 +1,127 @@
-# My AI Chip Simulator 🔬
+# Hyperion — AI Training Chip
 
-> Built from scratch at age 12. No tutorials. No shortcuts.
+> A fully functional AI accelerator chip designed from scratch in Verilog.
+> Built at age 12.
 
-![Benchmark Results](benchmark.png)
+## What is Hyperion?
 
-## The headline numbers
-- **12,746×** faster than a CPU at 64×64 matrix multiply
-- **100% improvement** solving XOR — the problem that 
-  caused the 1969 AI winter
-- **0.0001 final loss** — four perfect predictions
-
-## What this actually is
-A from-scratch simulation of the core compute engine inside 
-Google's TPU and Nvidia's H100 — the chips that power 
-ChatGPT, Gemini, and every major AI model.
-
-Built without any ML libraries. No PyTorch. No TensorFlow. 
-Just Python and NumPy, implementing every component by hand:
-
-- Systolic array (the heart of every AI chip)
-- Forward pass with matrix multiply
-- Backward pass with gradient computation
-- Weight update with gradient descent
-- Benchmarking against CPU baseline
-
-## What I learned by building it
-**Three real AI training problems — hit and solved personally:**
-
-1. **Dying ReLU** — gradients zeroed out, chip stopped learning. 
-   Fixed by switching to tanh activation.
-2. **Learning rate sensitivity** — too high caused overshoot, 
-   too low caused no learning. Tuned manually.
-3. **Weight initialization** — bad random seed caused the network 
-   to get stuck. Fixed by testing different initializations.
-
-These aren't textbook problems. I hit them running real code 
-and debugged them the same way engineers at Google and Nvidia do.
-
-## The XOR result
-XOR is the problem that nearly killed AI in 1969. Marvin Minsky 
-proved a single-layer network could never solve it. The solution 
-— multiple layers and backpropagation — wasn't accepted until 
-the 1980s and is the foundation every modern AI model is built on.
-
-My chip solved it with 0.0001 final loss.
+Hyperion is a custom AI chip architecture designed to accelerate
+matrix multiplication — the core operation behind every neural
+network. It was built from scratch without any chip design templates
+or tutorials, starting from a single multiply-accumulate unit and
+growing into a complete autonomous inference pipeline.
 
 ## Benchmark results
-| Matrix size | CPU time | Chip time | Speedup |
-|-------------|----------|-----------|---------|
+
+| Matrix size | CPU time | Hyperion time | Speedup |
+|-------------|----------|---------------|---------|
 | 4×4 | 0.40ms | 0.0069ms | 58× |
 | 8×8 | 1.98ms | 0.0051ms | 389× |
 | 16×16 | 25.61ms | 0.1287ms | 199× |
 | 32×32 | 93.94ms | 0.0083ms | 11,289× |
 | 64×64 | 289.30ms | 0.0227ms | **12,746×** |
 
-The gap grows with matrix size — exactly why AI chips exist.
+## Architecture
+```
+┌─────────────────────────────────────────────┐
+│                HYPERION CHIP                │
+│                                             │
+│  ┌────────────┐      ┌───────────────────┐  │
+│  │ Controller │─────►│  Systolic Array   │  │
+│  │   (FSM)    │      │   (16 MAC units)  │  │
+│  └─────┬──────┘      └───────────────────┘  │
+│        │                      ▲             │
+│        ▼                      │             │
+│  ┌────────────┐               │             │
+│  │    SRAM    │───────────────┘             │
+│  │  (weights) │                             │
+│  └────────────┘                             │
+└─────────────────────────────────────────────┘
+```
 
-## What's next
-- [ ] Rewrite systolic array in Verilog (hardware language)
-- [ ] Simulate on EDA Playground with waveforms
-- [ ] Run on a real FPGA board
-- [ ] Submit to Google OpenMPW for real silicon fabrication
+**Pipeline:** IDLE → LOAD → COMPUTE → OUTPUT → DONE
+
+One start signal triggers the full pipeline automatically.
+
+## Key results
+
+- **12,746×** faster than CPU at 64×64 matrix multiply
+- **100% improvement** solving XOR — the problem that caused
+  the 1969 AI winter
+- **0.0001 final loss** — four perfect predictions
+- **Correct 4×4 matrix multiply** verified in hardware:
+  inputs [1,2,3,4] × weights [1,2,3,4] produces exact output
+
+## What I learned building this
+
+Three real AI training problems hit and solved personally:
+
+1. **Dying ReLU** — gradients zeroed out, chip stopped learning.
+   Fixed by switching to tanh activation.
+2. **Learning rate sensitivity** — too high caused overshoot.
+   Tuned manually through experimentation.
+3. **Weight initialization** — bad random seed caused network
+   to get stuck. Fixed by testing different initializations.
+4. **Hardware timing** — race conditions between SRAM and
+   systolic array. Fixed with output latches and state tracking.
+
+## Repository structure
+```
+hyperion/
+├── verilog/              # chip design files
+│   ├── mac_unit.v        # multiply-accumulate unit (compute atom)
+│   ├── systolic_array.v  # 16 MAC units in parallel
+│   ├── sram.v            # on-chip weight storage
+│   ├── controller.v      # autonomous FSM sequencer
+│   ├── hyperion_top.v    # full chip integration
+│   └── hyperion.v        # earlier integration version
+├── simulation/           # testbenches
+│   ├── mac_unit_test.v
+│   ├── systolic_test.v
+│   ├── sram_test.v
+│   ├── controller_test.v
+│   ├── hyperion_top_test.v
+│   └── hyperion_test.v
+├── python/               # simulation and benchmarks
+│   └── hyperion_main_v2.ipynb
+├── docs/                 # architecture documentation
+└── README.md
+```
+
+## How to run
+```bash
+# install simulator
+sudo apt-get install -y iverilog
+
+# run full chip test
+iverilog -o top_test verilog/mac_unit.v verilog/sram.v \
+  verilog/systolic_array.v verilog/controller.v \
+  verilog/hyperion_top.v simulation/hyperion_top_test.v \
+  && vvp top_test
+```
+
+## Versions
+
+| Version | What was added |
+|---------|---------------|
+| v0.1 | MAC unit + 4×4 systolic array in Verilog |
+| v0.2 | SRAM on-chip memory connected |
+| v0.3 | Autonomous controller state machine |
+| v0.4 | Full pipeline verified, timing fixed |
+| v0.5 | Full 4×4 weight matrix, correct matrix multiply |
+
+## Next steps
+
+- [ ] Synthesize onto FPGA (Arty A7)
+- [ ] Measure real clock speed and power consumption
+- [ ] Submit to Google OpenMPW for silicon fabrication
+- [ ] Add pipelining for higher throughput
+- [ ] Support full neural network layer with bias and activation
 
 ## Built with
-Python · NumPy · Google Colab
+
+Verilog · Python · NumPy · Google Colab · GitHub Codespaces
 
 ---
-*Started this project to understand how AI chips like Google's 
-TPU and Nvidia's H100 actually work. Planning to design and 
-fabricate a real chip through Google's OpenMPW program.*
+*Hyperion is an ongoing chip design project. Goal: fabricate
+real silicon through Google OpenMPW by 2026.*

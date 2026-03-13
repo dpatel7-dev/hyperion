@@ -1,0 +1,9 @@
+# compiled simulation binaries
+*_test
+mac_test
+top_test
+sys_test
+sram_test
+ctrl_test
+hyperion_test
+*.vcd
