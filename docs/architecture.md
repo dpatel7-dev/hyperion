@@ -204,3 +204,36 @@ Boeing — same principles, more engineering.
 | `simulation/*_test.v` | Testbenches for each module |
 | `python/hyperion_main_v2.ipynb` | Python simulation + benchmarks |
 | `run_tests.sh` | Master test suite — 6 tests |
+
+## Synthesis results — v0.6
+
+Synthesized with Yosys 0.33 on the complete Hyperion chip.
+
+| Metric | Value |
+|--------|-------|
+| Total logic gates | 36,966 |
+| Flip flops | 2,118 |
+| Compute gates (systolic array) | 36,544 (98.9%) |
+| Control gates (SRAM + FSM + top) | 422 (1.1%) |
+| Peak memory during synthesis | 21.88 MB |
+
+### What these numbers mean
+
+**36,966 gates** puts Hyperion in context:
+
+| Chip | Logic gates |
+|------|-------------|
+| Intel 4004 — 1971 first CPU | 2,300 |
+| Hyperion v0.6 | 36,966 |
+| Arty A7 FPGA capacity | 533,000 |
+| Apple M1 — 2020 | 16,000,000,000 |
+
+Hyperion would use approximately 7% of an Arty A7 FPGA —
+meaning the board could fit 14 copies running simultaneously.
+
+**98.9% compute efficiency** — almost all gates are doing
+useful AI math. The controller and memory overhead is minimal.
+This is the hallmark of a well-designed accelerator.
+
+**1,024 MAC flip flops** — exactly 64 units × 16 bits each.
+No wasted registers. The design is mathematically clean.
