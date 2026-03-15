@@ -320,3 +320,53 @@ Boeing — same principles, more engineering.
 | `simulation/*_test.v` | Testbenches — 10 simulation tests |
 | `python/hyperion_main_v2.ipynb` | Python simulation + benchmarks |
 | `run_tests.sh` | Master test suite — 17 tests |
+
+## Co-simulation findings — v0.9
+
+Hyperion was connected to a real trained neural network
+via co-simulation — the same technique Google uses to
+validate TPU designs before fabrication.
+
+### What was demonstrated
+- Real weights trained in Python (loss: 0.000000, 4/4 accuracy)
+- Weights quantized from float32 → INT8
+- Weights loaded into actual Verilog simulation
+- Hardware executed inference and produced output
+- Pattern 0 correctly classified by hardware chip
+
+### Architectural finding — #1 target for v1.0
+
+**Current limitation:** `hyperion_layer` exposes only row 0
+of the systolic array as output. This means only `a0`
+contributes to the computation:
+```
+out[col] = a0 × w[col] × cycles   ← current
+out[col] = Σ a[row] × w[col]      ← needed
+```
+
+**Root cause:** The systolic array computes a full 16×16
+output matrix but the layer only reads the first row.
+For a true dot product, all 16 row outputs need to be
+summed per column — this is called **output reduction**.
+
+**Fix for v1.0:** Add a reduction unit after the systolic
+array that sums all 16 row outputs into one value per
+column. This is a standard component in real TPU designs.
+```
+Systolic array → Reduction unit → Bias → ReLU → output
+  (16×16 matrix)   (sum rows)
+```
+
+**Why this matters:** Without output reduction, Hyperion
+can only use one input at a time. With it, all 16 inputs
+contribute to each output — enabling true matrix-vector
+multiplication and making Hyperion a complete inference
+engine.
+
+### What this means for the project
+
+Discovering and documenting this limitation is more
+valuable than hiding it. Every real chip team finds
+architectural gaps during co-simulation — that is
+exactly what co-simulation is for. The fix is well
+understood and is the primary target for Hyperion v1.0.
