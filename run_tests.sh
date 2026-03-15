@@ -1,7 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────
 # HYPERION MASTER TEST SUITE
-# runs every module test in order
 # ─────────────────────────────────────────
 
 PASS=0
@@ -27,7 +26,7 @@ run_test() {
 }
 
 echo "======================================="
-echo "HYPERION TEST SUITE"
+echo "HYPERION TEST SUITE — v0.6"
 echo "======================================="
 echo ""
 
@@ -36,23 +35,23 @@ run_test "MAC unit" \
     "iverilog -o /tmp/t1 verilog/mac_unit.v simulation/mac_unit_test.v && vvp /tmp/t1" \
     "MAC unit working correctly"
 
-# test 2: Systolic array
-run_test "Systolic array" \
-    "iverilog -o /tmp/t2 verilog/mac_unit.v verilog/systolic_array.v simulation/systolic_test.v && vvp /tmp/t2" \
-    "16 MAC units running in parallel"
-
-# test 3: SRAM
+# test 2: SRAM
 run_test "SRAM" \
-    "iverilog -o /tmp/t3 verilog/sram.v simulation/sram_test.v && vvp /tmp/t3" \
+    "iverilog -o /tmp/t2 verilog/sram.v simulation/sram_test.v && vvp /tmp/t2" \
     "Hyperion SRAM working"
 
-# test 4: Controller
+# test 3: Controller
 run_test "Controller" \
-    "iverilog -o /tmp/t4 verilog/controller.v simulation/controller_test.v && vvp /tmp/t4" \
+    "iverilog -o /tmp/t3 verilog/controller.v simulation/controller_test.v && vvp /tmp/t3" \
     "Hyperion controller test complete"
 
+# test 4: Systolic array 8x8
+run_test "Systolic array 8x8" \
+    "iverilog -o /tmp/t4 verilog/mac_unit.v verilog/systolic_array_8x8.v simulation/systolic_8x8_test.v && vvp /tmp/t4" \
+    "64 MAC units running in parallel"
+
 # test 5: Full chip
-run_test "Full chip (hyperion_top)" \
+run_test "Full chip" \
     "iverilog -o /tmp/t5 verilog/mac_unit.v verilog/sram.v verilog/systolic_array.v verilog/controller.v verilog/hyperion_top.v simulation/hyperion_top_test.v && vvp /tmp/t5" \
     "This is Hyperion"
 
