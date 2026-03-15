@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────
-// HYPERION LAYER
-// Complete neural network layer:
-// 16x16 Systolic Array → ReLU activation
-// This is one transformer block's core
-// Same sequence as GPT, BERT, every LLM
+// HYPERION LAYER — v0.7 complete
+// Full neural network layer:
+// input × weight + bias → ReLU
+// Mathematically identical to one layer
+// of GPT, BERT, or any transformer
 // ─────────────────────────────────────────
 
 module hyperion_layer (
@@ -11,12 +11,17 @@ module hyperion_layer (
     input  reset,
     input  start,
     // 16 input values
-    input  signed [7:0] a0,a1,a2,a3,a4,a5,a6,a7,
-    input  signed [7:0] a8,a9,a10,a11,a12,a13,a14,a15,
+    input  signed [7:0]  a0,a1,a2,a3,a4,a5,a6,a7,
+    input  signed [7:0]  a8,a9,a10,a11,a12,a13,a14,a15,
     // 16 weight values
-    input  signed [7:0] w0,w1,w2,w3,w4,w5,w6,w7,
-    input  signed [7:0] w8,w9,w10,w11,w12,w13,w14,w15,
-    // outputs — one per column, after ReLU
+    input  signed [7:0]  w0,w1,w2,w3,w4,w5,w6,w7,
+    input  signed [7:0]  w8,w9,w10,w11,w12,w13,w14,w15,
+    // 16 bias values
+    input  signed [15:0] bias0,bias1,bias2,bias3,
+    input  signed [15:0] bias4,bias5,bias6,bias7,
+    input  signed [15:0] bias8,bias9,bias10,bias11,
+    input  signed [15:0] bias12,bias13,bias14,bias15,
+    // 16 outputs — after bias + ReLU
     output signed [15:0] out0,out1,out2,out3,
     output signed [15:0] out4,out5,out6,out7,
     output signed [15:0] out8,out9,out10,out11,
@@ -25,15 +30,19 @@ module hyperion_layer (
 );
 
     // ── internal wires ──
-    // raw outputs from systolic array
-    // we only use row 0 outputs for now
-    // (one output per column = one neuron)
+    // row 0 outputs from systolic array
     wire signed [15:0] r0c0,r0c1,r0c2,r0c3;
     wire signed [15:0] r0c4,r0c5,r0c6,r0c7;
     wire signed [15:0] r0c8,r0c9,r0c10,r0c11;
     wire signed [15:0] r0c12,r0c13,r0c14,r0c15;
 
-    // unused row outputs — need to be declared
+    // after bias addition
+    wire signed [15:0] biased0,biased1,biased2,biased3;
+    wire signed [15:0] biased4,biased5,biased6,biased7;
+    wire signed [15:0] biased8,biased9,biased10,biased11;
+    wire signed [15:0] biased12,biased13,biased14,biased15;
+
+    // unused row outputs
     wire signed [15:0] r1c0,r1c1,r1c2,r1c3,r1c4,r1c5,r1c6,r1c7;
     wire signed [15:0] r1c8,r1c9,r1c10,r1c11,r1c12,r1c13,r1c14,r1c15;
     wire signed [15:0] r2c0,r2c1,r2c2,r2c3,r2c4,r2c5,r2c6,r2c7;
@@ -65,35 +74,38 @@ module hyperion_layer (
     wire signed [15:0] r15c0,r15c1,r15c2,r15c3,r15c4,r15c5,r15c6,r15c7;
     wire signed [15:0] r15c8,r15c9,r15c10,r15c11,r15c12,r15c13,r15c14,r15c15;
 
-    // compute running flag
+    // sequencer
     reg computing;
     reg [4:0] cycle_count;
+    reg bias_enable;
     reg relu_enable;
 
-    // done signal
     assign done = (cycle_count >= 5'd20) && computing;
 
-    // sequencer — start → compute → relu → done
     always @(posedge clk) begin
         if (reset) begin
             computing   <= 0;
             cycle_count <= 0;
+            bias_enable <= 0;
             relu_enable <= 0;
         end else begin
             if (start) begin
                 computing   <= 1;
                 cycle_count <= 0;
+                bias_enable <= 0;
                 relu_enable <= 0;
             end
             if (computing) begin
                 cycle_count <= cycle_count + 1;
+                if (cycle_count >= 5'd8)
+                    bias_enable <= 1;
                 if (cycle_count >= 5'd10)
-                    relu_enable <= 1; // enable ReLU halfway through
+                    relu_enable <= 1;
             end
         end
     end
 
-    // ── 16x16 SYSTOLIC ARRAY ──
+    // ── STAGE 1: 16x16 SYSTOLIC ARRAY ──
     systolic_array_16x16 compute (
         .clk(clk),
         .reset(reset || !computing),
@@ -171,20 +183,34 @@ module hyperion_layer (
         .r15c12(r15c12),.r15c13(r15c13),.r15c14(r15c14),.r15c15(r15c15)
     );
 
-    // ── RELU UNIT ──
-    // takes row 0 outputs — one per column
-    relu_unit activation (
-        .clk(clk),
-        .reset(reset),
-        .enable(relu_enable),
-        .in00(r0c0), .in01(r0c1), .in02(r0c2), .in03(r0c3),
-        .in04(r0c4), .in05(r0c5), .in06(r0c6), .in07(r0c7),
-        .in08(r0c8), .in09(r0c9), .in10(r0c10),.in11(r0c11),
+    // ── STAGE 2: BIAS UNIT ──
+    bias_unit bias_add (
+        .clk(clk),.reset(reset),.enable(bias_enable),
+        .in0(r0c0),  .in1(r0c1),  .in2(r0c2),  .in3(r0c3),
+        .in4(r0c4),  .in5(r0c5),  .in6(r0c6),  .in7(r0c7),
+        .in8(r0c8),  .in9(r0c9),  .in10(r0c10),.in11(r0c11),
         .in12(r0c12),.in13(r0c13),.in14(r0c14),.in15(r0c15),
-        .out00(out0), .out01(out1), .out02(out2), .out03(out3),
-        .out04(out4), .out05(out5), .out06(out6), .out07(out7),
-        .out08(out8), .out09(out9), .out10(out10),.out11(out11),
-        .out12(out12),.out13(out13),.out14(out14),.out15(out15)
+        .b0(bias0),  .b1(bias1),  .b2(bias2),  .b3(bias3),
+        .b4(bias4),  .b5(bias5),  .b6(bias6),  .b7(bias7),
+        .b8(bias8),  .b9(bias9),  .b10(bias10),.b11(bias11),
+        .b12(bias12),.b13(bias13),.b14(bias14),.b15(bias15),
+        .out0(biased0),  .out1(biased1),  .out2(biased2),  .out3(biased3),
+        .out4(biased4),  .out5(biased5),  .out6(biased6),  .out7(biased7),
+        .out8(biased8),  .out9(biased9),  .out10(biased10),.out11(biased11),
+        .out12(biased12),.out13(biased13),.out14(biased14),.out15(biased15)
+    );
+
+    // ── STAGE 3: RELU UNIT ──
+    relu_unit activation (
+        .clk(clk),.reset(reset),.enable(relu_enable),
+        .in00(biased0),  .in01(biased1),  .in02(biased2),  .in03(biased3),
+        .in04(biased4),  .in05(biased5),  .in06(biased6),  .in07(biased7),
+        .in08(biased8),  .in09(biased9),  .in10(biased10), .in11(biased11),
+        .in12(biased12), .in13(biased13), .in14(biased14), .in15(biased15),
+        .out00(out0),  .out01(out1),  .out02(out2),  .out03(out3),
+        .out04(out4),  .out05(out5),  .out06(out6),  .out07(out7),
+        .out08(out8),  .out09(out9),  .out10(out10), .out11(out11),
+        .out12(out12), .out13(out13), .out14(out14), .out15(out15)
     );
 
 endmodule

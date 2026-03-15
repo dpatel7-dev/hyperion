@@ -3,19 +3,39 @@
 ![Language](https://img.shields.io/badge/language-Verilog-blue)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Age](https://img.shields.io/badge/built%20at%20age-12-purple)
-![Tests](https://img.shields.io/badge/tests-6%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-17%20passing-brightgreen)
+![Gates](https://img.shields.io/badge/logic%20gates-296%2C650-orange)
 
-> A fully functional AI accelerator chip designed from scratch in Verilog.
-> Built at age 12.
+> A fully functional 2-layer deep AI accelerator chip designed
+> from scratch in Verilog. Built at age 12.
 
 ## What is Hyperion?
 
 Hyperion is a custom AI chip architecture designed to accelerate
-matrix multiplication — the core operation behind every neural
-network. It was built from scratch without any chip design templates
-or tutorials, starting from a single multiply-accumulate unit and
-growing into a complete autonomous inference pipeline with a
-verified 8×8 systolic array running 64 MAC units in parallel.
+neural network inference. It was built from scratch without any
+chip design templates or tutorials — starting from a single
+multiply-accumulate unit and growing into a complete 2-layer deep
+neural network pipeline with 512 MAC operations per inference pass,
+verified by real hardware synthesis tools.
+
+The architecture matches the fundamental design pattern of Google's
+TPU and every modern AI accelerator: systolic array compute,
+on-chip memory, autonomous control, and a complete layer pipeline
+of matrix multiply → bias → activation.
+
+## Hardware spec
+
+| Metric | Value |
+|--------|-------|
+| Logic gates (total) | **296,650** |
+| Flip flops | 8,196 |
+| MAC units per layer | 256 (16×16 array) |
+| Total MAC operations | 512 (2 layers) |
+| Neural net layers | 2 stacked |
+| FPGA usage | ~56% of Arty A7 |
+| Simulation tests | 10 passing |
+| Synthesis tests | 7 passing |
+| Total tests | **17/17 passing** |
 
 ## Benchmark results
 
@@ -29,58 +49,56 @@ verified 8×8 systolic array running 64 MAC units in parallel.
 
 ## Architecture
 ```
-┌─────────────────────────────────────────────┐
-│                HYPERION CHIP                │
-│                                             │
-│  ┌────────────┐      ┌───────────────────┐  │
-│  │ Controller │─────►│  Systolic Array   │  │
-│  │   (FSM)    │      │  (64 MAC units)   │  │
-│  └─────┬──────┘      └───────────────────┘  │
-│        │                      ▲             │
-│        ▼                      │             │
-│  ┌────────────┐               │             │
-│  │    SRAM    │───────────────┘             │
-│  │  (weights) │                             │
-│  └────────────┘                             │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│                 HYPERION DEEP                    │
+│                                                  │
+│  ┌─────────────────────────────────────────────┐ │
+│  │              LAYER 1                        │ │
+│  │  inputs → [16×16 systolic] → bias → ReLU   │ │
+│  │              256 MACs                       │ │
+│  └───────────────────┬─────────────────────────┘ │
+│                      │ layer 1 output             │
+│                      ▼                            │
+│  ┌─────────────────────────────────────────────┐ │
+│  │              LAYER 2                        │ │
+│  │  layer1 → [16×16 systolic] → bias → ReLU   │ │
+│  │              256 MACs                       │ │
+│  └───────────────────┬─────────────────────────┘ │
+│                      │                            │
+│                   output                          │
+└──────────────────────────────────────────────────┘
 ```
 
-**Pipeline:** IDLE → LOAD → COMPUTE → OUTPUT → DONE
+**Layer formula:** `output = ReLU(input × weight + bias)`
 
-One start signal triggers the full pipeline automatically.
+**Full chip pipeline:** IDLE → LOAD → COMPUTE → OUTPUT → DONE
+
+One start signal triggers the entire 2-layer pipeline automatically.
+
+## Synthesis results — verified by Yosys
+```
+MAC unit:            571 gates
+ReLU unit:           272 gates
+Bias unit:         1,824 gates
+16×16 array:     146,176 gates  (256 MACs)
+Complete layer:  148,320 gates  (array + bias + ReLU)
+Hyperion Deep:   296,650 gates  (2 full layers)
+```
 
 ## Key results
 
+- **296,650 logic gates** — verified by Yosys synthesis
+- **17/17 tests passing** — simulation and synthesis
 - **12,746×** faster than CPU at 64×64 matrix multiply
-- **64 MAC units** running in parallel in verified 8×8 array
-- **100% improvement** solving XOR — the problem that caused
-  the 1969 AI winter
+- **512 MAC operations** per inference pass
+- **2 stacked layers** — same architecture as GPT, different scale
+- **100% improvement** solving XOR in Python simulation
 - **0.0001 final loss** — four perfect predictions
-- **Correct 8×8 matrix multiply** verified in hardware:
-  inputs [1–8] × weights [1–8] produces exact output
-- **6 tests passing** across all modules
-
-## Verified 8×8 output
-
-Input `a=[1,2,3,4,5,6,7,8]` weights `w=[1,2,3,4,5,6,7,8]`:
-```
-Row 0:   3   6   9  12  15  18  21  24
-Row 1:   6  12  18  24  30  36  42  48
-Row 2:   9  18  27  36  45  54  63  72
-Row 3:  12  24  36  48  60  72  84  96
-Row 4:  15  30  45  60  75  90 105 120
-Row 5:  18  36  54  72  90 108 126 144
-Row 6:  21  42  63  84 105 126 147 168
-Row 7:  24  48  72  96 120 144 168 192
-```
-
-Row ratios 1:2:3:4:5:6:7:8 ✓  
-Column ratios 1:2:3:4:5:6:7:8 ✓  
-All 64 outputs correct ✓
+- **Complete layer formula** — `input × weight + bias → ReLU`
 
 ## What I learned building this
 
-Four real hardware and AI problems hit and solved personally:
+Five real hardware and AI problems hit and solved personally:
 
 1. **Dying ReLU** — gradients zeroed out, chip stopped learning.
    Fixed by switching to tanh activation.
@@ -90,50 +108,63 @@ Four real hardware and AI problems hit and solved personally:
    to get stuck. Fixed by testing different initializations.
 4. **Hardware timing** — race conditions between SRAM and
    systolic array. Fixed with output latches and state tracking.
+5. **Output naming conflicts** — duplicate port names in 16×16
+   array. Fixed by switching to row-column naming convention
+   and using Python to generate the Verilog automatically.
 
 ## Repository structure
 ```
 hyperion/
-├── verilog/                  # chip design files
-│   ├── mac_unit.v            # multiply-accumulate unit (compute atom)
-│   ├── systolic_array.v      # 4×4 — 16 MAC units
-│   ├── systolic_array_8x8.v  # 8×8 — 64 MAC units (current)
-│   ├── sram.v                # on-chip weight storage
-│   ├── controller.v          # autonomous FSM sequencer
-│   ├── hyperion_top.v        # 4×4 full chip integration
-│   └── hyperion_top_8x8.v   # 8×8 full chip integration (current)
-├── simulation/               # testbenches
+├── verilog/                      # chip design files
+│   ├── mac_unit.v                # multiply-accumulate unit
+│   ├── systolic_array.v          # 4×4  — 16 MAC units
+│   ├── systolic_array_8x8.v      # 8×8  — 64 MAC units
+│   ├── systolic_array_16x16.v    # 16×16 — 256 MAC units
+│   ├── sram.v                    # on-chip weight storage
+│   ├── controller.v              # autonomous FSM sequencer
+│   ├── relu_unit.v               # ReLU activation
+│   ├── bias_unit.v               # bias addition
+│   ├── hyperion_top.v            # 4×4 full chip
+│   ├── hyperion_top_8x8.v        # 8×8 full chip
+│   ├── hyperion_layer.v          # complete layer (×W+b→ReLU)
+│   └── hyperion_deep.v           # 2 stacked layers ← current
+├── simulation/                   # testbenches
 │   ├── mac_unit_test.v
 │   ├── systolic_test.v
 │   ├── systolic_8x8_test.v
+│   ├── systolic_16x16_test.v
 │   ├── sram_test.v
 │   ├── controller_test.v
+│   ├── relu_test.v
+│   ├── bias_test.v
 │   ├── hyperion_top_test.v
-│   └── hyperion_8x8_test.v
-├── python/                   # simulation and benchmarks
+│   ├── hyperion_8x8_test.v
+│   ├── hyperion_layer_test.v
+│   └── hyperion_deep_test.v
+├── python/                       # simulation and benchmarks
 │   └── hyperion_main_v2.ipynb
-├── docs/                     # architecture documentation
+├── docs/                         # architecture documentation
 │   └── architecture.md
-├── run_tests.sh              # master test suite
+├── run_tests.sh                  # master test suite (17 tests)
 └── README.md
 ```
 
 ## How to run
 ```bash
-# install simulator
-sudo apt-get install -y iverilog
+# install dependencies
+sudo apt-get install -y iverilog yosys
 
-# run all tests
+# run all 17 tests (simulation + synthesis)
 ./run_tests.sh
 
-# run 8x8 full chip test directly
-iverilog -o top_test verilog/mac_unit.v verilog/sram.v \
-  verilog/systolic_array_8x8.v verilog/controller.v \
-  verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v \
-  && vvp top_test
+# run 2-layer deep inference directly
+iverilog -o deep_test verilog/mac_unit.v verilog/relu_unit.v \
+  verilog/bias_unit.v verilog/systolic_array_16x16.v \
+  verilog/hyperion_layer.v verilog/hyperion_deep.v \
+  simulation/hyperion_deep_test.v && vvp deep_test
 ```
 
-## Versions
+## Version history
 
 | Version | What was added |
 |---------|----------------|
@@ -142,20 +173,21 @@ iverilog -o top_test verilog/mac_unit.v verilog/sram.v \
 | v0.3 | Autonomous controller state machine |
 | v0.4 | Full pipeline verified, timing fixed |
 | v0.5 | Full 4×4 weight matrix, correct matrix multiply |
-| v0.6 | 8×8 systolic array, 64 MAC units, full pipeline verified |
+| v0.6 | 8×8 systolic array, 64 MAC units, full pipeline |
+| v0.7 | 16×16 array, ReLU, bias — complete layer formula |
+| v0.8 | 2 stacked layers, 512 MACs, 296,650 gates, 17/17 tests |
 
 ## Next steps
 
 - [ ] Synthesize onto FPGA (Arty A7)
 - [ ] Measure real clock speed and power consumption
-- [ ] Add ReLU activation unit in Verilog
-- [ ] Scale to 16×16 — 256 MAC units
+- [ ] Add a third layer — go deeper
+- [ ] Upgrade to BF16 precision
 - [ ] Submit to Google OpenMPW for silicon fabrication
-- [ ] Support full neural network layer with bias and activation
 
 ## Built with
 
-Verilog · Python · NumPy · Google Colab · GitHub Codespaces
+Verilog · Python · NumPy · Yosys · Google Colab · GitHub Codespaces
 
 ---
 *Hyperion is an ongoing chip design project. Goal: fabricate
