@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────
-# HYPERION MASTER TEST SUITE
+# HYPERION MASTER TEST SUITE — v0.6
 # ─────────────────────────────────────────
 
 PASS=0
@@ -50,10 +50,15 @@ run_test "Systolic array 8x8" \
     "iverilog -o /tmp/t4 verilog/mac_unit.v verilog/systolic_array_8x8.v simulation/systolic_8x8_test.v && vvp /tmp/t4" \
     "64 MAC units running in parallel"
 
-# test 5: Full chip
-run_test "Full chip" \
+# test 5: Full chip 4x4 pipeline
+run_test "Full chip 4x4 pipeline" \
     "iverilog -o /tmp/t5 verilog/mac_unit.v verilog/sram.v verilog/systolic_array.v verilog/controller.v verilog/hyperion_top.v simulation/hyperion_top_test.v && vvp /tmp/t5" \
     "This is Hyperion"
+
+# test 6: Full chip 8x8 pipeline
+run_test "Full chip 8x8 pipeline" \
+    "iverilog -o /tmp/t6 verilog/mac_unit.v verilog/sram.v verilog/systolic_array_8x8.v verilog/controller.v verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v && vvp /tmp/t6" \
+    "This is Hyperion v0.6"
 
 echo ""
 echo "======================================="
