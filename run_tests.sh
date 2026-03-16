@@ -132,6 +132,9 @@ run_sim_tests() {
     run_test "FFN unit" \
         "iverilog -o /tmp/t_ffn verilog/ffn_unit.v simulation/ffn_test.v && vvp /tmp/t_ffn" \
         "Hyperion FFN unit working"
+    run_test "Transformer deep — 2 blocks" \
+        "iverilog -o /tmp/t_td verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v simulation/transformer_deep_test.v && vvp /tmp/t_td" \
+        "Hyperion transformer deep complete"
     run_test "Transformer block" \
         "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
         "Hyperion transformer block complete"
@@ -158,6 +161,9 @@ run_synth_tests() {
         "layernorm_unit" "verilog/layernorm_unit.v"
     run_synth "FFN unit" \
         "ffn_unit" "verilog/ffn_unit.v"
+    run_synth "Transformer deep — 2 blocks" \
+        "transformer_deep" \
+        "verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v"
     run_synth "Transformer block" \
         "transformer_block" \
         "verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v"
@@ -178,7 +184,7 @@ echo -e "${NC}"
 echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v1.2  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
-echo -e "  ${WHITE}${BOLD}  Modules: 20   Transformer block   GPT architecture${NC}"
+echo -e "  ${WHITE}${BOLD}  Modules: 21   2 transformer blocks   toward LLM${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
 if ! command -v iverilog &> /dev/null; then
