@@ -126,6 +126,15 @@ run_sim_tests() {
     run_test "Attention unit" \
         "iverilog -o /tmp/t15 verilog/attention_unit.v simulation/attention_test.v && vvp /tmp/t15" \
         "Hyperion attention unit working"
+    run_test "LayerNorm unit" \
+        "iverilog -o /tmp/t_ln verilog/layernorm_unit.v simulation/layernorm_test.v && vvp /tmp/t_ln" \
+        "Hyperion LayerNorm unit working"
+    run_test "FFN unit" \
+        "iverilog -o /tmp/t_ffn verilog/ffn_unit.v simulation/ffn_test.v && vvp /tmp/t_ffn" \
+        "Hyperion FFN unit working"
+    run_test "Transformer block" \
+        "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
+        "Hyperion transformer block complete"
     run_test "32x32 layer — 1024 MACs" \
         "iverilog -o /tmp/t16 $BASE32 verilog/hyperion_layer_32x32.v simulation/layer32_test.v && vvp /tmp/t16" \
         "Hyperion 32x32 layer — 1024 MACs verified"
@@ -145,6 +154,13 @@ run_synth_tests() {
     run_synth "Complete layer v1.0"     "hyperion_layer"         "$BASE verilog/hyperion_layer.v"
     run_synth "Hyperion Deep — 2 layers" "hyperion_deep"         "$BASE verilog/hyperion_layer.v verilog/hyperion_deep.v"
     run_synth "Hyperion Deeper — 3 layers" "hyperion_deeper"     "$BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v"
+    run_synth "LayerNorm unit" \
+        "layernorm_unit" "verilog/layernorm_unit.v"
+    run_synth "FFN unit" \
+        "ffn_unit" "verilog/ffn_unit.v"
+    run_synth "Transformer block" \
+        "transformer_block" \
+        "verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v"
     run_synth "32x32 layer — 1024 MACs" "hyperion_layer_32x32"   "$BASE32 verilog/hyperion_layer_32x32.v"
 }
 
@@ -162,7 +178,7 @@ echo -e "${NC}"
 echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v1.2  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
-echo -e "  ${WHITE}${BOLD}  Modules: 17   32x32: 1024 MACs   Attention: verified${NC}"
+echo -e "  ${WHITE}${BOLD}  Modules: 20   Transformer block   GPT architecture${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
 if ! command -v iverilog &> /dev/null; then
