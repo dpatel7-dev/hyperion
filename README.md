@@ -3,8 +3,9 @@
 ![Language](https://img.shields.io/badge/language-Verilog-blue)
 ![Status](https://img.shields.io/badge/status-active-brightgreen)
 ![Age](https://img.shields.io/badge/built%20at%20age-12-purple)
-![Tests](https://img.shields.io/badge/tests-17%20passing-brightgreen)
-![Gates](https://img.shields.io/badge/logic%20gates-296%2C650-orange)
+![Gates](https://img.shields.io/badge/logic%20gates-664%2C775-orange)
+![Tests](https://img.shields.io/badge/tests-31%20passing-brightgreen)
+![Gates](https://img.shields.io/badge/logic%20gates-664%2C775-orange)
 
 > A fully functional 2-layer deep AI accelerator chip designed
 > from scratch in Verilog. Built at age 12.
