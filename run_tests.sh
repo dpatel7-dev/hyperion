@@ -132,6 +132,9 @@ run_sim_tests() {
     run_test "2 stacked layers — Hyperion Deep" \
         "iverilog -o /tmp/t11 $BASE verilog/hyperion_layer.v verilog/hyperion_deep.v simulation/hyperion_deep_test.v && vvp /tmp/t11" \
         "Hyperion DEEP — 2 stacked layers complete"
+    run_test "Gradient unit" \
+        "iverilog -o /tmp/tg verilog/gradient_unit.v simulation/gradient_test.v && vvp /tmp/tg" \
+        "Hyperion gradient unit working"
     run_test "3 stacked layers — Hyperion Deeper" \
         "iverilog -o /tmp/t12 $BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t12" \
         "Hyperion DEEPER — 3 layers complete"
@@ -159,6 +162,8 @@ run_synth_tests() {
     run_synth "Hyperion Deep — 2 layers" \
         "hyperion_deep" \
         "$BASE verilog/hyperion_layer.v verilog/hyperion_deep.v"
+    run_synth "Gradient unit" \
+        "gradient_unit" "verilog/gradient_unit.v"
     run_synth "Hyperion Deeper — 3 layers" \
         "hyperion_deeper" \
         "$BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v"
@@ -280,10 +285,15 @@ case $CHOICE in
                     "Hyperion DEEP — 2 stacked layers complete"
                 run_synth "Hyperion Deep (synth)" "hyperion_deep" \
                     "$BASE verilog/hyperion_layer.v verilog/hyperion_deep.v" ;;
-            12) run_test "3 stacked layers — Hyperion Deeper" \
+            12) run_test "Gradient unit" \
+        "iverilog -o /tmp/tg verilog/gradient_unit.v simulation/gradient_test.v && vvp /tmp/tg" \
+        "Hyperion gradient unit working"
+    run_test "3 stacked layers — Hyperion Deeper" \
                     "iverilog -o /tmp/t12 $BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t12" \
                     "Hyperion DEEPER — 3 layers complete"
-                run_synth "Hyperion Deeper (synth)" "hyperion_deeper" \
+                run_synth "Gradient unit" \
+        "gradient_unit" "verilog/gradient_unit.v"
+    run_synth "Hyperion Deeper (synth)" "hyperion_deeper" \
                     "$BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v" ;;
             *) echo -e "\n  ${RED}Invalid selection${NC}" ;;
         esac ;;
