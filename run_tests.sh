@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────
-# HYPERION TEST SUITE — v0.9
+# HYPERION TEST SUITE — v1.0
 # ─────────────────────────────────────────
 
 RED='\033[0;31m'
@@ -20,6 +20,9 @@ SIM_FAIL=0
 SYN_PASS=0
 SYN_FAIL=0
 START_TIME=$(date +%s)
+
+# base verilog files needed by most tests
+BASE="verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/reduction_unit.v verilog/systolic_array_16x16.v"
 
 section() {
     echo ""
@@ -89,7 +92,7 @@ print_results() {
     echo -e "  ${DIM}  Time         ${NC}${WHITE}${ELAPSED}s${NC}"
     echo ""
     echo -e "  ${DIM}$(printf '─%.0s' {1..60})${NC}"
-    echo -e "  ${DIM}  Hyperion v0.9  ·  3 layers  ·  768 MACs  ·  13 modules${NC}"
+    echo -e "  ${DIM}  Hyperion v1.0  ·  reduction unit  ·  true dot product${NC}"
     echo -e "  ${DIM}$(printf '─%.0s' {1..60})${NC}"
     echo ""
 }
@@ -117,17 +120,20 @@ run_sim_tests() {
     run_test "Bias unit" \
         "iverilog -o /tmp/t7 verilog/bias_unit.v simulation/bias_test.v && vvp /tmp/t7" \
         "Hyperion bias unit working"
+    run_test "Reduction unit" \
+        "iverilog -o /tmp/t8 verilog/reduction_unit.v simulation/reduction_test.v && vvp /tmp/t8" \
+        "Hyperion reduction unit working"
     run_test "Full chip 8x8 pipeline" \
-        "iverilog -o /tmp/t8 verilog/mac_unit.v verilog/sram.v verilog/systolic_array_8x8.v verilog/controller.v verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v && vvp /tmp/t8" \
+        "iverilog -o /tmp/t9 verilog/mac_unit.v verilog/sram.v verilog/systolic_array_8x8.v verilog/controller.v verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v && vvp /tmp/t9" \
         "This is Hyperion v0.6"
     run_test "Complete neural net layer" \
-        "iverilog -o /tmp/t9 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v simulation/hyperion_layer_test.v && vvp /tmp/t9" \
-        "Hyperion v0.7 — mathematically complete"
+        "iverilog -o /tmp/t10 $BASE verilog/hyperion_layer.v simulation/hyperion_layer_test.v && vvp /tmp/t10" \
+        "mathematically complete"
     run_test "2 stacked layers — Hyperion Deep" \
-        "iverilog -o /tmp/t10 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deep.v simulation/hyperion_deep_test.v && vvp /tmp/t10" \
+        "iverilog -o /tmp/t11 $BASE verilog/hyperion_layer.v verilog/hyperion_deep.v simulation/hyperion_deep_test.v && vvp /tmp/t11" \
         "Hyperion DEEP — 2 stacked layers complete"
     run_test "3 stacked layers — Hyperion Deeper" \
-        "iverilog -o /tmp/t11 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t11" \
+        "iverilog -o /tmp/t12 $BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t12" \
         "Hyperion DEEPER — 3 layers complete"
 }
 
@@ -139,21 +145,23 @@ run_synth_tests() {
         "relu_unit" "verilog/relu_unit.v"
     run_synth "Bias unit" \
         "bias_unit" "verilog/bias_unit.v"
+    run_synth "Reduction unit" \
+        "reduction_unit" "verilog/reduction_unit.v"
     run_synth "Systolic array 16x16" \
         "systolic_array_16x16" \
         "verilog/mac_unit.v verilog/systolic_array_16x16.v"
     run_synth "Full chip 8x8 pipeline" \
         "hyperion_top_8x8" \
         "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/systolic_array_8x8.v verilog/hyperion_top_8x8.v"
-    run_synth "Complete neural net layer" \
+    run_synth "Complete neural net layer v1.0" \
         "hyperion_layer" \
-        "verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v"
+        "$BASE verilog/hyperion_layer.v"
     run_synth "Hyperion Deep — 2 layers" \
         "hyperion_deep" \
-        "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deep.v"
+        "$BASE verilog/hyperion_layer.v verilog/hyperion_deep.v"
     run_synth "Hyperion Deeper — 3 layers" \
         "hyperion_deeper" \
-        "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deeper.v"
+        "$BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v"
 }
 
 # ── header ──
@@ -167,13 +175,12 @@ echo "  ██╔══██║  ╚██╔╝  ██╔═══╝ ██�
 echo "  ██║  ██║   ██║   ██║     ███████╗██║  ██║██║╚██████╔╝██║ ╚████║"
 echo "  ╚═╝  ╚═╝   ╚═╝   ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝"
 echo -e "${NC}"
-echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v0.9  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
+echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v1.0  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
-echo -e "  ${WHITE}${BOLD}  Modules: 13   MAC units: 768   Layers: 3   Gates: ~445K${NC}"
+echo -e "  ${WHITE}${BOLD}  Modules: 14   Pipeline: 4 stages   True dot product${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
-# ── deps ──
 if ! command -v iverilog &> /dev/null; then
     echo -e "\n  ${YELLOW}⚠  installing iverilog...${NC}"
     sudo apt-get install -y iverilog -q
@@ -183,18 +190,16 @@ if ! command -v yosys &> /dev/null; then
     sudo apt-get install -y yosys -q
 fi
 
-# ── skip menu if argument given ──
 if [ "$1" == "all" ];   then run_sim_tests; run_synth_tests; print_results; exit 0; fi
 if [ "$1" == "sim" ];   then run_sim_tests;  print_results; exit 0; fi
 if [ "$1" == "synth" ]; then run_synth_tests; print_results; exit 0; fi
 
-# ── interactive menu ──
 echo ""
 echo -e "  ${WHITE}${BOLD}Select tests to run:${NC}"
 echo ""
-echo -e "  ${CYAN}[1]${NC}  ${WHITE}All tests${NC}             ${DIM}19 tests — simulation + synthesis${NC}"
-echo -e "  ${CYAN}[2]${NC}  ${WHITE}Simulation only${NC}       ${DIM}11 tests — verify correct output${NC}"
-echo -e "  ${CYAN}[3]${NC}  ${WHITE}Synthesis only${NC}        ${DIM}8 tests  — verify gate counts${NC}"
+echo -e "  ${CYAN}[1]${NC}  ${WHITE}All tests${NC}             ${DIM}21 tests — simulation + synthesis${NC}"
+echo -e "  ${CYAN}[2]${NC}  ${WHITE}Simulation only${NC}       ${DIM}12 tests — verify correct output${NC}"
+echo -e "  ${CYAN}[3]${NC}  ${WHITE}Synthesis only${NC}        ${DIM}9 tests  — verify gate counts${NC}"
 echo -e "  ${CYAN}[4]${NC}  ${WHITE}Single module${NC}         ${DIM}pick one module to test${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '─%.0s' {1..60})${NC}"
@@ -217,74 +222,69 @@ case $CHOICE in
         echo -e "  ${CYAN}[ 5]${NC}  Systolic array 16x16"
         echo -e "  ${CYAN}[ 6]${NC}  ReLU unit"
         echo -e "  ${CYAN}[ 7]${NC}  Bias unit"
-        echo -e "  ${CYAN}[ 8]${NC}  Full chip 8x8 pipeline"
-        echo -e "  ${CYAN}[ 9]${NC}  Complete neural net layer"
-        echo -e "  ${CYAN}[10]${NC}  Hyperion Deep — 2 layers"
-        echo -e "  ${CYAN}[11]${NC}  Hyperion Deeper — 3 layers"
+        echo -e "  ${CYAN}[ 8]${NC}  Reduction unit"
+        echo -e "  ${CYAN}[ 9]${NC}  Full chip 8x8 pipeline"
+        echo -e "  ${CYAN}[10]${NC}  Complete neural net layer v1.0"
+        echo -e "  ${CYAN}[11]${NC}  Hyperion Deep — 2 layers"
+        echo -e "  ${CYAN}[12]${NC}  Hyperion Deeper — 3 layers"
         echo ""
         printf "  ${CYAN}›${NC} "
         read -r MOD
         section "Single module test"
         case $MOD in
-            1)
-                run_test "MAC unit" \
+            1)  run_test "MAC unit" \
                     "iverilog -o /tmp/t1 verilog/mac_unit.v simulation/mac_unit_test.v && vvp /tmp/t1" \
                     "MAC unit working correctly"
                 run_synth "MAC unit (synth)" "mac_unit" "verilog/mac_unit.v" ;;
-            2)
-                run_test "SRAM" \
+            2)  run_test "SRAM" \
                     "iverilog -o /tmp/t2 verilog/sram.v simulation/sram_test.v && vvp /tmp/t2" \
                     "Hyperion SRAM working" ;;
-            3)
-                run_test "Controller" \
+            3)  run_test "Controller" \
                     "iverilog -o /tmp/t3 verilog/controller.v simulation/controller_test.v && vvp /tmp/t3" \
                     "Hyperion controller test complete" ;;
-            4)
-                run_test "Systolic array 8x8" \
+            4)  run_test "Systolic array 8x8" \
                     "iverilog -o /tmp/t4 verilog/mac_unit.v verilog/systolic_array_8x8.v simulation/systolic_8x8_test.v && vvp /tmp/t4" \
                     "64 MAC units running in parallel"
                 run_synth "Systolic array 8x8 (synth)" "systolic_array_8x8" \
                     "verilog/mac_unit.v verilog/systolic_array_8x8.v" ;;
-            5)
-                run_test "Systolic array 16x16" \
+            5)  run_test "Systolic array 16x16" \
                     "iverilog -o /tmp/t5 verilog/mac_unit.v verilog/systolic_array_16x16.v simulation/systolic_16x16_test.v && vvp /tmp/t5" \
                     "256 MAC units running in parallel"
                 run_synth "Systolic array 16x16 (synth)" "systolic_array_16x16" \
                     "verilog/mac_unit.v verilog/systolic_array_16x16.v" ;;
-            6)
-                run_test "ReLU unit" \
+            6)  run_test "ReLU unit" \
                     "iverilog -o /tmp/t6 verilog/relu_unit.v simulation/relu_test.v && vvp /tmp/t6" \
                     "Hyperion ReLU unit working"
                 run_synth "ReLU unit (synth)" "relu_unit" "verilog/relu_unit.v" ;;
-            7)
-                run_test "Bias unit" \
+            7)  run_test "Bias unit" \
                     "iverilog -o /tmp/t7 verilog/bias_unit.v simulation/bias_test.v && vvp /tmp/t7" \
                     "Hyperion bias unit working"
                 run_synth "Bias unit (synth)" "bias_unit" "verilog/bias_unit.v" ;;
-            8)
-                run_test "Full chip 8x8 pipeline" \
-                    "iverilog -o /tmp/t8 verilog/mac_unit.v verilog/sram.v verilog/systolic_array_8x8.v verilog/controller.v verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v && vvp /tmp/t8" \
+            8)  run_test "Reduction unit" \
+                    "iverilog -o /tmp/t8 verilog/reduction_unit.v simulation/reduction_test.v && vvp /tmp/t8" \
+                    "Hyperion reduction unit working"
+                run_synth "Reduction unit (synth)" "reduction_unit" \
+                    "verilog/reduction_unit.v" ;;
+            9)  run_test "Full chip 8x8 pipeline" \
+                    "iverilog -o /tmp/t9 verilog/mac_unit.v verilog/sram.v verilog/systolic_array_8x8.v verilog/controller.v verilog/hyperion_top_8x8.v simulation/hyperion_8x8_test.v && vvp /tmp/t9" \
                     "This is Hyperion v0.6"
                 run_synth "Full chip 8x8 (synth)" "hyperion_top_8x8" \
                     "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/systolic_array_8x8.v verilog/hyperion_top_8x8.v" ;;
-            9)
-                run_test "Complete neural net layer" \
-                    "iverilog -o /tmp/t9 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v simulation/hyperion_layer_test.v && vvp /tmp/t9" \
-                    "Hyperion v0.7 — mathematically complete"
-                run_synth "Neural net layer (synth)" "hyperion_layer" \
-                    "verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v" ;;
-            10)
-                run_test "2 stacked layers — Hyperion Deep" \
-                    "iverilog -o /tmp/t10 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deep.v simulation/hyperion_deep_test.v && vvp /tmp/t10" \
+            10) run_test "Complete neural net layer v1.0" \
+                    "iverilog -o /tmp/t10 $BASE verilog/hyperion_layer.v simulation/hyperion_layer_test.v && vvp /tmp/t10" \
+                    "mathematically complete"
+                run_synth "Neural net layer v1.0 (synth)" "hyperion_layer" \
+                    "$BASE verilog/hyperion_layer.v" ;;
+            11) run_test "2 stacked layers — Hyperion Deep" \
+                    "iverilog -o /tmp/t11 $BASE verilog/hyperion_layer.v verilog/hyperion_deep.v simulation/hyperion_deep_test.v && vvp /tmp/t11" \
                     "Hyperion DEEP — 2 stacked layers complete"
                 run_synth "Hyperion Deep (synth)" "hyperion_deep" \
-                    "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deep.v" ;;
-            11)
-                run_test "3 stacked layers — Hyperion Deeper" \
-                    "iverilog -o /tmp/t11 verilog/mac_unit.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t11" \
+                    "$BASE verilog/hyperion_layer.v verilog/hyperion_deep.v" ;;
+            12) run_test "3 stacked layers — Hyperion Deeper" \
+                    "iverilog -o /tmp/t12 $BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v simulation/hyperion_deeper_test.v && vvp /tmp/t12" \
                     "Hyperion DEEPER — 3 layers complete"
                 run_synth "Hyperion Deeper (synth)" "hyperion_deeper" \
-                    "verilog/mac_unit.v verilog/sram.v verilog/controller.v verilog/relu_unit.v verilog/bias_unit.v verilog/systolic_array_16x16.v verilog/hyperion_layer.v verilog/hyperion_deeper.v" ;;
+                    "$BASE verilog/hyperion_layer.v verilog/hyperion_deeper.v" ;;
             *) echo -e "\n  ${RED}Invalid selection${NC}" ;;
         esac ;;
     *) echo -e "\n  ${RED}Invalid selection${NC}"; exit 1 ;;
