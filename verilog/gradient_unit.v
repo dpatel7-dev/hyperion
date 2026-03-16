@@ -74,22 +74,22 @@ module gradient_unit (
 
     // ── dL/dW = x * g (outer product, row 0) ──
     // dw[col] = x0 * g[col]
-    wire signed [23:0] dw_raw0  = $signed(x0) * $signed(g0[7:0]);
-    wire signed [23:0] dw_raw1  = $signed(x0) * $signed(g1[7:0]);
-    wire signed [23:0] dw_raw2  = $signed(x0) * $signed(g2[7:0]);
-    wire signed [23:0] dw_raw3  = $signed(x0) * $signed(g3[7:0]);
-    wire signed [23:0] dw_raw4  = $signed(x0) * $signed(g4[7:0]);
-    wire signed [23:0] dw_raw5  = $signed(x0) * $signed(g5[7:0]);
-    wire signed [23:0] dw_raw6  = $signed(x0) * $signed(g6[7:0]);
-    wire signed [23:0] dw_raw7  = $signed(x0) * $signed(g7[7:0]);
-    wire signed [23:0] dw_raw8  = $signed(x0) * $signed(g8[7:0]);
-    wire signed [23:0] dw_raw9  = $signed(x0) * $signed(g9[7:0]);
-    wire signed [23:0] dw_raw10 = $signed(x0) * $signed(g10[7:0]);
-    wire signed [23:0] dw_raw11 = $signed(x0) * $signed(g11[7:0]);
-    wire signed [23:0] dw_raw12 = $signed(x0) * $signed(g12[7:0]);
-    wire signed [23:0] dw_raw13 = $signed(x0) * $signed(g13[7:0]);
-    wire signed [23:0] dw_raw14 = $signed(x0) * $signed(g14[7:0]);
-    wire signed [23:0] dw_raw15 = $signed(x0) * $signed(g15[7:0]);
+    wire signed [31:0] dw_raw0  = $signed(x0) * $signed(g0[15:0]);
+    wire signed [31:0] dw_raw1  = $signed(x0) * $signed(g1[15:0]);
+    wire signed [31:0] dw_raw2  = $signed(x0) * $signed(g2[15:0]);
+    wire signed [31:0] dw_raw3  = $signed(x0) * $signed(g3[15:0]);
+    wire signed [31:0] dw_raw4  = $signed(x0) * $signed(g4[15:0]);
+    wire signed [31:0] dw_raw5  = $signed(x0) * $signed(g5[15:0]);
+    wire signed [31:0] dw_raw6  = $signed(x0) * $signed(g6[15:0]);
+    wire signed [31:0] dw_raw7  = $signed(x0) * $signed(g7[15:0]);
+    wire signed [31:0] dw_raw8  = $signed(x0) * $signed(g8[15:0]);
+    wire signed [31:0] dw_raw9  = $signed(x0) * $signed(g9[15:0]);
+    wire signed [31:0] dw_raw10 = $signed(x0) * $signed(g10[15:0]);
+    wire signed [31:0] dw_raw11 = $signed(x0) * $signed(g11[15:0]);
+    wire signed [31:0] dw_raw12 = $signed(x0) * $signed(g12[15:0]);
+    wire signed [31:0] dw_raw13 = $signed(x0) * $signed(g13[15:0]);
+    wire signed [31:0] dw_raw14 = $signed(x0) * $signed(g14[15:0]);
+    wire signed [31:0] dw_raw15 = $signed(x0) * $signed(g15[15:0]);
 
     assign dw0  = (state==GRAD_W||state==GRAD_X||state==GRAD_B||state==DONE) ? dw_raw0[15:0]  : 16'sd0;
     assign dw1  = (state==GRAD_W||state==GRAD_X||state==GRAD_B||state==DONE) ? dw_raw1[15:0]  : 16'sd0;
@@ -128,15 +128,15 @@ module gradient_unit (
 
     // ── dL/dX = g × w^T ──
     // dx[i] = sum_j(g[j] * w[j]) for each input position
-    wire signed [23:0] dx_raw0 =
-        $signed(g0[7:0])*$signed(w0)   + $signed(g1[7:0])*$signed(w1)   +
-        $signed(g2[7:0])*$signed(w2)   + $signed(g3[7:0])*$signed(w3)   +
-        $signed(g4[7:0])*$signed(w4)   + $signed(g5[7:0])*$signed(w5)   +
-        $signed(g6[7:0])*$signed(w6)   + $signed(g7[7:0])*$signed(w7)   +
-        $signed(g8[7:0])*$signed(w8)   + $signed(g9[7:0])*$signed(w9)   +
-        $signed(g10[7:0])*$signed(w10) + $signed(g11[7:0])*$signed(w11) +
-        $signed(g12[7:0])*$signed(w12) + $signed(g13[7:0])*$signed(w13) +
-        $signed(g14[7:0])*$signed(w14) + $signed(g15[7:0])*$signed(w15);
+    wire signed [31:0] dx_raw0 =
+        $signed(g0[15:0])*$signed(w0)   + $signed(g1[15:0])*$signed(w1)   +
+        $signed(g2[15:0])*$signed(w2)   + $signed(g3[15:0])*$signed(w3)   +
+        $signed(g4[15:0])*$signed(w4)   + $signed(g5[15:0])*$signed(w5)   +
+        $signed(g6[15:0])*$signed(w6)   + $signed(g7[15:0])*$signed(w7)   +
+        $signed(g8[15:0])*$signed(w8)   + $signed(g9[15:0])*$signed(w9)   +
+        $signed(g10[15:0])*$signed(w10) + $signed(g11[15:0])*$signed(w11) +
+        $signed(g12[15:0])*$signed(w12) + $signed(g13[15:0])*$signed(w13) +
+        $signed(g14[15:0])*$signed(w14) + $signed(g15[15:0])*$signed(w15);
 
     assign dx0  = (state==GRAD_X||state==GRAD_B||state==DONE) ? dx_raw0[15:0] : 16'sd0;
     assign dx1  = (state==GRAD_X||state==GRAD_B||state==DONE) ? dx_raw0[15:0] : 16'sd0;
