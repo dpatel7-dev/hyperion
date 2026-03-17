@@ -156,6 +156,9 @@ run_sim_tests() {
     run_test "Transformer block" \
         "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
         "Hyperion transformer block complete"
+    run_test "FFN trainer" \
+        "iverilog -o /tmp/t_ffnt verilog/ffn_unit.v verilog/ffn_trainer.v simulation/ffn_trainer_test.v && vvp /tmp/t_ffnt" \
+        "Hyperion FFN trainer working"
     run_test "32x32 layer — 1024 MACs" \
         "iverilog -o /tmp/t16 $BASE32 verilog/hyperion_layer_32x32.v simulation/layer32_test.v && vvp /tmp/t16" \
         "Hyperion 32x32 layer — 1024 MACs verified"
