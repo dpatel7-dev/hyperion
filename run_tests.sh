@@ -135,6 +135,9 @@ run_sim_tests() {
     run_test "GPT-2 full pipeline" \
         "iverilog -o /tmp/t_gpt2fp verilog/positional_encoding.v verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v verilog/hyperion_gpt2_full.v simulation/gpt2_full_test.v && vvp /tmp/t_gpt2fp" \
         "Hyperion GPT-2 full pipeline complete"
+    run_test "Softmax unit" \
+        "iverilog -o /tmp/t_sm verilog/softmax_unit.v simulation/softmax_test.v && vvp /tmp/t_sm" \
+        "Hyperion softmax unit working"
     run_test "Positional encoding" \
         "iverilog -o /tmp/t_pe verilog/positional_encoding.v simulation/pe_test.v && vvp /tmp/t_pe" \
         "Hyperion positional encoding working"
@@ -196,7 +199,7 @@ echo -e "${NC}"
 echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v1.2  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
-echo -e "  ${WHITE}${BOLD}  Modules: 25   PE + 12 blocks   complete GPT-2 pipeline${NC}"
+echo -e "  ${WHITE}${BOLD}  Modules: 26   softmax   real attention probabilities${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
 if ! command -v iverilog &> /dev/null; then
