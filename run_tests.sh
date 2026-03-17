@@ -156,6 +156,9 @@ run_sim_tests() {
     run_test "Transformer block" \
         "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
         "Hyperion transformer block complete"
+    run_test "BF16 units" \
+        "iverilog -o /tmp/t_bf16 verilog/bf16_mul.v verilog/bf16_add.v verilog/bf16_mac.v simulation/bf16_test.v && vvp /tmp/t_bf16" \
+        "Hyperion BF16 units working"
     run_test "FFN trainer" \
         "iverilog -o /tmp/t_ffnt verilog/ffn_unit.v verilog/ffn_trainer.v simulation/ffn_trainer_test.v && vvp /tmp/t_ffnt" \
         "Hyperion FFN trainer working"
