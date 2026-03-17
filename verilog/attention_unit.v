@@ -77,16 +77,29 @@ module attention_unit (
 
     assign score = (state >= SCALE) ? qk_scaled[15:0] : 16'sd0;
 
-    // ── STEP 3: softmax approximation ──
-    // true softmax needs exp() which is expensive in hardware
-    // approximation: if score > 0, weight = score; else weight = 0
-    // this is a ReLU approximation of softmax for single-head attention
-    // real TPUs use lookup tables for exp() — that's a future upgrade
-    wire signed [15:0] attn_weight = (state >= SOFTMAX) ?
-        (qk_scaled[23] ? 16'sd0 : qk_scaled[15:0]) : 16'sd0;
+    // ── STEP 3: softmax via softmax_unit ──
+    // real softmax — exp approximation lookup table
+    // same technique used in Google TPU
+    // input: single score broadcast to all 8 positions
+    // (single-head attention: one score gates all V values)
+    wire [15:0] sm_out0,sm_out1,sm_out2,sm_out3;
+    wire [15:0] sm_out4,sm_out5,sm_out6,sm_out7;
+    wire signed [15:0] score_in = (state >= SOFTMAX) ? qk_scaled[15:0] : 16'sd0;
+
+    softmax_unit sm (
+        .clk(clk),.reset(reset),
+        .enable(state >= SOFTMAX),
+        .x0(score_in),.x1(16'sd0),.x2(16'sd0),.x3(16'sd0),
+        .x4(16'sd0),.x5(16'sd0),.x6(16'sd0),.x7(16'sd0),
+        .out0(sm_out0),.out1(sm_out1),.out2(sm_out2),.out3(sm_out3),
+        .out4(sm_out4),.out5(sm_out5),.out6(sm_out6),.out7(sm_out7)
+    );
+
+    // softmax output 0 = probability of this score
+    // scale back to signed for multiplication
+    wire signed [15:0] attn_weight = $signed({1'b0, sm_out0[14:0]});
 
     // ── STEP 4: attention output = weight * V ──
-    // scale weight down before multiplying to avoid overflow
     wire signed [15:0] w_scaled = attn_weight;
 
     wire signed [23:0] ao_raw0 = $signed(w_scaled) * $signed(v0);

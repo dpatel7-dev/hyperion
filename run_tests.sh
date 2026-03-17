@@ -124,7 +124,7 @@ run_sim_tests() {
         "iverilog -o /tmp/t14 verilog/weight_update_unit.v simulation/weight_update_test.v && vvp /tmp/t14" \
         "Hyperion weight update unit working"
     run_test "Attention unit" \
-        "iverilog -o /tmp/t15 verilog/attention_unit.v simulation/attention_test.v && vvp /tmp/t15" \
+        "iverilog -o /tmp/t15 verilog/softmax_unit.v verilog/attention_unit.v simulation/attention_test.v && vvp /tmp/t15" \
         "Hyperion attention unit working"
     run_test "LayerNorm unit" \
         "iverilog -o /tmp/t_ln verilog/layernorm_unit.v simulation/layernorm_test.v && vvp /tmp/t_ln" \
@@ -133,7 +133,7 @@ run_sim_tests() {
         "iverilog -o /tmp/t_ffn verilog/ffn_unit.v simulation/ffn_test.v && vvp /tmp/t_ffn" \
         "Hyperion FFN unit working"
     run_test "GPT-2 full pipeline" \
-        "iverilog -o /tmp/t_gpt2fp verilog/positional_encoding.v verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v verilog/hyperion_gpt2_full.v simulation/gpt2_full_test.v && vvp /tmp/t_gpt2fp" \
+        "iverilog -o /tmp/t_gpt2fp verilog/positional_encoding.v verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v verilog/hyperion_gpt2_full.v simulation/gpt2_full_test.v && vvp /tmp/t_gpt2fp" \
         "Hyperion GPT-2 full pipeline complete"
     run_test "Softmax unit" \
         "iverilog -o /tmp/t_sm verilog/softmax_unit.v simulation/softmax_test.v && vvp /tmp/t_sm" \
@@ -142,16 +142,16 @@ run_sim_tests() {
         "iverilog -o /tmp/t_pe verilog/positional_encoding.v simulation/pe_test.v && vvp /tmp/t_pe" \
         "Hyperion positional encoding working"
     run_test "GPT-2 — 12 blocks" \
-        "iverilog -o /tmp/t_gpt2full verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v simulation/gpt2_test.v && vvp /tmp/t_gpt2full" \
+        "iverilog -o /tmp/t_gpt2full verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v simulation/gpt2_test.v && vvp /tmp/t_gpt2full" \
         "Hyperion GPT-2 complete"
     run_test "GPT-2 mini — 4 blocks" \
-        "iverilog -o /tmp/t_gpt2 verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v simulation/gpt2_mini_test.v && vvp /tmp/t_gpt2" \
+        "iverilog -o /tmp/t_gpt2 verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v simulation/gpt2_mini_test.v && vvp /tmp/t_gpt2" \
         "Hyperion GPT-2 mini complete"
     run_test "Transformer deep — 2 blocks" \
-        "iverilog -o /tmp/t_td verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v simulation/transformer_deep_test.v && vvp /tmp/t_td" \
+        "iverilog -o /tmp/t_td verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v simulation/transformer_deep_test.v && vvp /tmp/t_td" \
         "Hyperion transformer deep complete"
     run_test "Transformer block" \
-        "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
+        "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
         "Hyperion transformer block complete"
     run_test "32x32 layer — 1024 MACs" \
         "iverilog -o /tmp/t16 $BASE32 verilog/hyperion_layer_32x32.v simulation/layer32_test.v && vvp /tmp/t16" \
@@ -317,7 +317,7 @@ case $CHOICE in
                     "iverilog -o /tmp/t14 verilog/weight_update_unit.v simulation/weight_update_test.v && vvp /tmp/t14" \
                     "Hyperion weight update unit working" ;;
             15) run_test "Attention unit" \
-                    "iverilog -o /tmp/t15 verilog/attention_unit.v simulation/attention_test.v && vvp /tmp/t15" \
+                    "iverilog -o /tmp/t15 verilog/softmax_unit.v verilog/attention_unit.v simulation/attention_test.v && vvp /tmp/t15" \
                     "Hyperion attention unit working"
                 run_synth "Attention unit" "attention_unit" "verilog/attention_unit.v" ;;
             16) run_test "32x32 layer — 1024 MACs" \
