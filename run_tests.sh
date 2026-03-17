@@ -132,6 +132,9 @@ run_sim_tests() {
     run_test "FFN unit" \
         "iverilog -o /tmp/t_ffn verilog/ffn_unit.v simulation/ffn_test.v && vvp /tmp/t_ffn" \
         "Hyperion FFN unit working"
+    run_test "GPT-2 — 12 blocks" \
+        "iverilog -o /tmp/t_gpt2full verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v verilog/transformer_gpt2.v simulation/gpt2_test.v && vvp /tmp/t_gpt2full" \
+        "Hyperion GPT-2 complete"
     run_test "GPT-2 mini — 4 blocks" \
         "iverilog -o /tmp/t_gpt2 verilog/layernorm_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v verilog/transformer_deep.v verilog/transformer_gpt2_mini.v simulation/gpt2_mini_test.v && vvp /tmp/t_gpt2" \
         "Hyperion GPT-2 mini complete"
@@ -187,7 +190,7 @@ echo -e "${NC}"
 echo -e "  ${DIM}AI Accelerator Chip  ·  Test Suite v1.2  ·  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo ""
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
-echo -e "  ${WHITE}${BOLD}  Modules: 22   4 transformer blocks   halfway to GPT-2${NC}"
+echo -e "  ${WHITE}${BOLD}  Modules: 23   12 transformer blocks   GPT-2 small complete${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
 if ! command -v iverilog &> /dev/null; then
