@@ -74,7 +74,7 @@ print_results() {
     echo -e "  ${DIM}  Time         ${NC}${WHITE}${ELAPSED}s${NC}"
     echo ""
     echo -e "  ${DIM}$(printf '─%.0s' {1..60})${NC}"
-    echo -e "  ${DIM}  Hyperion v1.2  ·  1024 MACs  ·  attention  ·  training${NC}"
+    echo -e "  ${DIM}  Hyperion v1.8  ·  LoRA  ·  adaptive precision  ·  BF16  ·  30 tests${NC}"
     echo -e "  ${DIM}$(printf '─%.0s' {1..60})${NC}"
     echo ""
 }
