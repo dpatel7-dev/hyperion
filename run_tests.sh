@@ -156,6 +156,9 @@ run_sim_tests() {
     run_test "Transformer block" \
         "iverilog -o /tmp/t_tb verilog/layernorm_unit.v verilog/softmax_unit.v verilog/attention_unit.v verilog/ffn_unit.v verilog/transformer_block.v simulation/transformer_test.v && vvp /tmp/t_tb" \
         "Hyperion transformer block complete"
+    run_test "LoRA unit" \
+        "iverilog -o /tmp/t_lora verilog/lora_unit.v simulation/lora_test.v && vvp /tmp/t_lora" \
+        "Hyperion LoRA unit working"
     run_test "Adaptive precision controller" \
         "iverilog -o /tmp/t_apc verilog/adaptive_precision_ctrl.v simulation/adaptive_ctrl_test.v && vvp /tmp/t_apc" \
         "Hyperion adaptive precision controller working"
