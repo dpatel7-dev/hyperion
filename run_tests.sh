@@ -217,13 +217,29 @@ echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 echo -e "  ${WHITE}${BOLD}  Modules: 27   embedding table   token to vector${NC}"
 echo -e "  ${DIM}$(printf '═%.0s' {1..60})${NC}"
 
-if ! command -v iverilog &> /dev/null; then
-    echo -e "\n  ${YELLOW}⚠  installing iverilog...${NC}"
-    sudo apt-get install -y iverilog -q
-fi
-if ! command -v yosys &> /dev/null; then
-    echo -e "\n  ${YELLOW}⚠  installing yosys...${NC}"
-    sudo apt-get install -y yosys -q
+# ── auto-install required tools ──
+# collect what's missing first
+MISSING=""
+command -v iverilog &> /dev/null || MISSING="$MISSING iverilog"
+command -v yosys    &> /dev/null || MISSING="$MISSING yosys"
+
+if [ -n "$MISSING" ]; then
+    echo -e "\n  ${YELLOW}⚠  installing:${NC}${WHITE}${MISSING}${NC}"
+    echo -e "  ${DIM}  refreshing package lists (first run only)...${NC}"
+    # update package lists once — fresh Codespaces have stale lists
+    sudo apt-get update -qq
+    # install everything that was missing in one go
+    sudo apt-get install -y -qq $MISSING
+    # verify the install actually worked
+    STILL_MISSING=""
+    command -v iverilog &> /dev/null || STILL_MISSING="$STILL_MISSING iverilog"
+    command -v yosys    &> /dev/null || STILL_MISSING="$STILL_MISSING yosys"
+    if [ -n "$STILL_MISSING" ]; then
+        echo -e "\n  ${RED}✗  install failed for:${NC}${WHITE}${STILL_MISSING}${NC}"
+        echo -e "  ${DIM}  try manually:${NC} ${WHITE}sudo apt-get update && sudo apt-get install -y$STILL_MISSING${NC}"
+        exit 1
+    fi
+    echo -e "  ${GREEN}✓  tools installed${NC}"
 fi
 
 if [ "$1" == "all" ];   then run_sim_tests; run_synth_tests; print_results; exit 0; fi
